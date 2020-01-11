@@ -1,26 +1,22 @@
-import scala.util.parsing.combinator.RegexParsers
 
-object Parser extends RegexParsers {
+import scala.language.implicitConversions
+import scala.util.parsing.combinator.{PackratParsers, Parsers, RegexParsers}
+
+object Parser extends Parsers with RegexParsers with PackratParsers {
+  type P[+A] = PackratParser[A]
+
   // @formatter:off
-  def number: Parser[Int]          = "\\d+".r ^^ (_.toInt)
-  def param:  Parser[String]       = "\\w+".r ^^ (_.toString)
-  def params: Parser[List[String]] = ((param <~ "\\s+".r).* ~ param ^^ (t => t._1 appended t._2)) <~ "."
-  def lambda: Parser[ELambda]      = """\([\\λ]""".r ~> params ~ expression <~ ")" ^^ (x => ELambda(x._1, x._2))
+  lazy val number: P[ENumber]      = "\\d+".r ^^ (_.toInt) ^^ ENumber
+  lazy val param:  P[EParam]       = """[^\\λ.,()\s]+""".r ^^ EParam
+  lazy val params: P[List[EParam]] = ((param <~ ",".r).* ~ param ^^ (t => t._1 appended t._2)) <~ "."
+  lazy val lambda: P[ELambda]      = "(" ~> ("λ" | "\\") ~> params ~ expression <~ ")" ^^ (x => ELambda(x._1, x._2))
   // @formatter:on
 
-  def expression: Parser[Expression] = atom | ("(" ~> atom <~ ")")
+  lazy val term: P[Expression] = number | param | lambda | "(" ~> expression <~ ")"
 
-  def atom: Parser[Expression] = (number | param | lambda) ~ expression.? ^^ { compound =>
-    val first = compound._1 match {
-      case x: Int => ENumber(x)
-      case x: String => EParam(x)
-      case x: Expression => x
-      case x => throw new IllegalStateException(s"what? $x")
-    }
-
-    compound._2 match {
-      case Some(arg) => EApplication(first, arg)
-      case None => first
+  lazy val expression: P[Expression] = rep1(term) ^^ { es =>
+    es.tail.foldLeft(es.head) {
+      case (exp, acc) => EApplication(exp, acc)
     }
   }
 }
