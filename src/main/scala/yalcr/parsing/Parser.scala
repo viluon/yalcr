@@ -1,5 +1,7 @@
+package yalcr.parsing
 
-import scala.language.implicitConversions
+import yalcr.lang.{EApplication, ELambda, ENumber, EParam, Expression}
+
 import scala.util.parsing.combinator.{PackratParsers, Parsers, RegexParsers}
 
 object Parser extends Parsers with RegexParsers with PackratParsers {

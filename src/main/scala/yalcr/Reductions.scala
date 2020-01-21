@@ -1,3 +1,6 @@
+package yalcr
+
+import yalcr.lang.{EApplication, ELambda, EParam, Expression}
 
 object Reductions {
   @scala.annotation.tailrec

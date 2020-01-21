@@ -1,5 +1,9 @@
+package yalcr.lang
+
 sealed trait Expression {
   def pretty(depth: Int = 0, context: Set[String] = Set.empty): String
+
+  protected[lang] def nice(implicit depth: Int, context: Set[String] = Set.empty): String = pretty(depth + 1, context)
 
   def coloured(text: String, depth: Int): String = {
     val colour = List(Console.GREEN
@@ -12,7 +16,7 @@ sealed trait Expression {
     s"$colour$text${Console.RESET}"
   }
 
-  def parens(text: String, depth: Int): String = coloured("(", depth) + text + coloured(")", depth)
+  def parens(text: String)(implicit depth: Int): String = coloured("(", depth) + text + coloured(")", depth)
 
   def wrong(text: String): String = s"${Console.RED_B + Console.BLACK}$text${Console.RESET}"
 }
@@ -28,11 +32,11 @@ case class EParam(name: String) extends Expression {
 }
 
 case class ELambda(params: List[EParam], body: Expression) extends Expression {
-  override def pretty(depth: Int, context: Set[String]): String = {
-    parens(s"λ ${params mkString ", "}. ${body.pretty(depth + 1, params.foldLeft(context)((ctx, p) => ctx incl p.name))}", depth)
+  override def pretty(implicit depth: Int, context: Set[String]): String = {
+    parens(s"λ ${params mkString ", "}. ${body.nice(depth, params.foldLeft(context)((ctx, p) => ctx incl p.name))}")
   }
 }
 
 case class EApplication(λ: Expression, param: Expression) extends Expression {
-  override def pretty(depth: Int, context: Set[String]): String = parens(s"${λ.pretty(depth + 1, context)} ${param.pretty(depth + 1, context)}", depth)
+  override def pretty(implicit depth: Int, context: Set[String]): String = parens(s"${λ.nice} ${param.nice}")
 }
