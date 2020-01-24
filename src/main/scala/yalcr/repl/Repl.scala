@@ -1,37 +1,31 @@
 package yalcr.repl
 
-import yalcr.extensions.Monad
+import yalcr.repl.Commands.Command
 
-import scala.language.higherKinds
 import scala.util.{Failure, Success, Try}
 
 trait Repl {
   import yalcr.repl.Repl._
 
-  type Result[A] = Either[AbortReason, State[A]]
-  type State[A]
+  val evaluationStrategy: eval.Strategy[State, (Command, String)]
 
-  val stateMonad: Monad[State]
-  val evaluationStrategy: eval.Strategy[State]
-
-  def print[A](state: State[A])
-  def printError(err: String)
+  def print[A](state: State)
 
   @scala.annotation.tailrec
-  final def loop[A, B](input: LazyList[String], init: State[A]): Result[B] = {
+  final def loop[A, B](input: LazyList[String], init: State): Result = {
     Try(input.headOption) match {
-      case Failure(_) => Left(AbortReasons.Terminated)
+      case Failure(_) | Success(Some(null)) => Left(AbortReasons.Terminated)
       case Success(None) => Left(AbortReasons.ReachedEndOfInput)
       case Success(Some(str)) =>
-        CommandParser parse str.toLowerCase() match {
+        val state = CommandParser parse str.toLowerCase() match {
           case fail: CommandParser.NoSuccess =>
-            printError(s"$fail${System.lineSeparator()}${Commands.usage}")
-            loop(input.tail, init)
+            (str :: init._1, Left(s"$fail${System.lineSeparator()}${Commands.usage}"))
           case CommandParser.Success(result, next) =>
-            val state = evaluationStrategy.eval(init, (result, next.source.toString))
-            print(state)
-            loop(input.tail, state)
+            evaluationStrategy.eval(init, (result, next.source.toString))
         }
+
+        print(state)
+        loop(input.tail, state)
     }
   }
 }
@@ -43,4 +37,9 @@ object Repl {
   }
 
   type AbortReason = AbortReasons.Value
+
+  type History = List[String]
+  type ErrorOrOk = Either[String, String]
+  type State = (History, ErrorOrOk)
+  type Result = Either[AbortReason, State]
 }

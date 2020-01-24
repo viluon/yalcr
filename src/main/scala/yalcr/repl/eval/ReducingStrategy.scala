@@ -1,33 +1,32 @@
 package yalcr.repl.eval
 
 import yalcr.Reductions
-import yalcr.extensions.Monad
+import yalcr.lang.Expression
 import yalcr.parsing.Parser
 import yalcr.repl.Commands
 import yalcr.repl.Commands.Command
-import yalcr.repl.state.{ReplState, ReplStateMonad}
+import yalcr.repl.Repl.State
 
-object ReducingStrategy extends Strategy[ReplState] {
-  override val stateMonad: Monad[ReplState] = ReplStateMonad
-
-  override def eval[A, B](state: ReplState[A], cmd: (Command, String)): ReplState[B] = {
-    import scala.language.reflectiveCalls
-
-    cmd._1 match {
-      case Commands.solve => ???
-      case Commands.help => (??? : {def foo(x: String): Nothing}).foo(Commands.usage)
-    }
+object ReducingStrategy extends Strategy[State, (Command, String)] {
+  override def eval(state: State, cmd: (Command, String)): State = state match {
+    case (history, _) => (history, cmd match {
+      case (Commands.solve, expr) => solve(expr) match {
+        case Left(err) => Left(err)
+        case Right((expr, maybeReduced)) =>
+          val newline = System.lineSeparator()
+          Right(expr.pretty() + newline + (maybeReduced match {
+            case Some(reduced) => s"β -> ${reduced.pretty()}"
+            case None => "no reductions possible"
+          }))
+      }
+      case (Commands.help, _) => Left(Commands.usage)
+    })
   }
 
-  def solve(expr: String): String = {
+  def solve(expr: String): Either[String, (Expression, Option[Expression])] = {
     Parser.parseAll(Parser.expression, expr) match {
-      case fail: Parser.NoSuccess => fail.toString
-      case Parser.Success(expr, _) =>
-        val reductionResult = Reductions beta expr match {
-          case Some(reduced) => reduced.pretty()
-          case None => "None"
-        }
-        List(expr.pretty(), reductionResult) mkString System.lineSeparator()
+      case fail: Parser.NoSuccess => Left(fail.toString)
+      case Parser.Success(expr, _) => Right((expr, Reductions beta expr))
     }
   }
 }

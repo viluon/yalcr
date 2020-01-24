@@ -32,11 +32,15 @@ case class EParam(name: String) extends Expression {
 }
 
 case class ELambda(params: List[EParam], body: Expression) extends Expression {
-  override def pretty(implicit depth: Int, context: Set[String]): String = {
+  override def pretty(depth: Int, context: Set[String]): String = {
+    implicit val d: Int = depth
     parens(s"λ ${params mkString ", "}. ${body.nice(depth, params.foldLeft(context)((ctx, p) => ctx incl p.name))}")
   }
 }
 
-case class EApplication(λ: Expression, param: Expression) extends Expression {
-  override def pretty(implicit depth: Int, context: Set[String]): String = parens(s"${λ.nice} ${param.nice}")
+case class EApplication(λ: Expression, argument: Expression) extends Expression {
+  override def pretty(depth: Int, context: Set[String]): String = {
+    implicit val d: Int = depth
+    parens(s"${λ.nice} ${argument.nice}")
+  }
 }
