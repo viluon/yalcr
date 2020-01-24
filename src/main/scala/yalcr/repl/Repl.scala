@@ -1,5 +1,6 @@
 package yalcr.repl
 
+import yalcr.lang.Expression
 import yalcr.repl.Commands.Command
 
 import scala.util.{Failure, Success, Try}
@@ -13,15 +14,16 @@ trait Repl {
 
   @scala.annotation.tailrec
   final def loop[A, B](input: LazyList[String], init: State): Result = {
+    val (lastExpr, history, _) = init
     Try(input.headOption) match {
       case Failure(_) | Success(Some(null)) => Left(AbortReasons.Terminated)
       case Success(None) => Left(AbortReasons.ReachedEndOfInput)
       case Success(Some(str)) =>
         val state = CommandParser parse str.toLowerCase() match {
           case fail: CommandParser.NoSuccess =>
-            (str :: init._1, Left(s"$fail${System.lineSeparator()}${Commands.usage}"))
+            (lastExpr, str :: history, Left(s"$fail${System.lineSeparator()}${Commands.usage}"))
           case CommandParser.Success(result, next) =>
-            evaluationStrategy.eval(init, (result, next.source.toString))
+            evaluationStrategy.eval(init, (result, next.source.toString.substring(next.offset)))
         }
 
         print(state)
@@ -40,6 +42,7 @@ object Repl {
 
   type History = List[String]
   type ErrorOrOk = Either[String, String]
-  type State = (History, ErrorOrOk)
+  type LastExpression = Option[Expression]
+  type State = (LastExpression, History, ErrorOrOk)
   type Result = Either[AbortReason, State]
 }

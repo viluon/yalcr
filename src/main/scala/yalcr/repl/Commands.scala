@@ -7,5 +7,6 @@ object Commands extends Enumeration {
   lazy val usage: String = s"Available commands: $newline" + ((values map ("\t" + _.toString)) mkString newline)
 
   val solve: Command = Value
+  val next: Command = Value
   val help: Command = Value
 }
