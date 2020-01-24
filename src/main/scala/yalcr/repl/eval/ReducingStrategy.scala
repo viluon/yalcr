@@ -20,8 +20,8 @@ object ReducingStrategy extends eval.Strategy[State, (Command, String)] {
       (r.toOption.flatMap(e => Reductions beta e), history, r.map(e => pretty(e, Reductions beta e)))
   }
 
-  def pretty(expr: Expression, reduced: Option[Expression]): String = expr.pretty() + newline + (reduced match {
-    case Some(reduced) => s"β -> ${reduced.pretty()}"
+  def pretty(expr: Expression, reduced: Option[Expression]): String = expr.pretty + newline + (reduced match {
+    case Some(reduced) => s"β -> ${reduced.pretty}"
     case None => "no reductions possible"
   })
 
