@@ -1,28 +1,32 @@
 package yalcr
 
-import LazyList.#::
 import yalcr.lang.{EApplication, ELambda, EParam, Expression}
 
 object Reductions {
-  def eta(expr: Expression): Option[Expression] = expr match {
-    case EApplication(λ, argument) => ???
-    case ELambda(params, body) => ???
-    case _ => None
-  }
-
   def beta(expr: Expression, context: Map[EParam, Option[Expression]] = Map.empty): Option[Expression] = expr match {
-    case ELambda(params, body) => beta(body, context removedAll params)
-    case EApplication(ELambda(params, body), argument) =>
-      val newBody = substitute(body, params.head.name, argument)
-      Some(if (params.tail.nonEmpty) ELambda(params.tail, newBody) else newBody)
-
+    case ELambda(params, body) => for (body <- beta(body, context removedAll params)) yield ELambda(params, body)
     case EApplication(lambda, argument) =>
-      val reduced = LazyList(lambda, argument) map (e => (e, beta(e, context)))
-      lazy val result = reduced map (t => t._2 getOrElse t._1) match {
-        case lambda #:: argument #:: _ => EApplication(lambda, argument)
-      }
+      // (someLambda, someArgument)
+      //  reduced     reduced      // prohibited (single step at a time)
+      //  reduced     default
+      //  default     reduced
+      //  default     default      // prohibited (return None if not reducible)
 
-      reduced find (_._2.nonEmpty) map (_ => result)
+      val λDefaultAndReduced = lambda :: beta(lambda, context).toList
+      val argDefaultAndReduced = argument :: beta(argument, context).toList
+
+      (for (
+        λ <- λDefaultAndReduced.reverse;
+        arg <- argDefaultAndReduced.reverse
+        if (λ == lambda) != (arg == argument)
+      ) yield EApplication(λ, arg)).headOption orElse {
+        lambda match {
+          case ELambda(params, body) =>
+            val newBody = substitute(body, params.head.name, argument)
+            Some(if (params.tail.nonEmpty) ELambda(params.tail, newBody) else newBody)
+          case _ => None
+        }
+      }
     case _ => None
   }
 

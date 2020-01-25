@@ -22,8 +22,8 @@ case class ExpressionPrinter(expr: Expression, depth: Int = 0, context: Set[EPar
 
   def coloured(s: String): String = {
     val colour = List(GREEN
-      , YELLOW
       , BLUE
+      , YELLOW
       , MAGENTA
       , CYAN
       , WHITE)(depth % 6)
