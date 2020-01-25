@@ -1,5 +1,6 @@
-package yalcr.repl
+package yalcr.parsing
 
+import yalcr.repl.Commands
 import yalcr.repl.Commands.Command
 
 import scala.util.parsing.combinator.{Parsers, RegexParsers}

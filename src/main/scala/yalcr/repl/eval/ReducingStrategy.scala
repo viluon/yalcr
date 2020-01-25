@@ -11,13 +11,13 @@ import yalcr.repl.{Commands, eval}
 object ReducingStrategy extends eval.Strategy[State, (Command, String)] {
   override def eval(state: State, cmd: (Command, String)): State = state match {
     case (lastExpr, history, _) =>
-      val r: Either[String, Expression] = cmd match {
+      val r = (cmd match {
         case (Commands.solve, expr) => parse(expr)
         case (Commands.next, _) => lastExpr toRight "no computation to continue"
         case (Commands.help, _) => Left(Commands.usage)
-      }
-      // FIXME ugly double reduction
-      (r.toOption.flatMap(e => Reductions beta e), history, r.map(e => pretty(e, Reductions beta e)))
+      }) map (expr => (expr, Reductions beta expr))
+
+      (r.toOption.flatMap(_._2), history, r.map(e => pretty(e._1, e._2)))
   }
 
   def pretty(expr: Expression, reduced: Option[Expression]): String = expr.pretty + newline + (reduced match {

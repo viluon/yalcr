@@ -21,12 +21,15 @@ case class ExpressionPrinter(expr: Expression, depth: Int = 0, context: Set[EPar
   def parens(s: String): String = coloured("(") + s + coloured(")")
 
   def coloured(s: String): String = {
+    // @formatter:off
     val colour = List(GREEN
-      , BLUE
-      , YELLOW
-      , MAGENTA
-      , CYAN
-      , WHITE)(depth % 6)
+                    , BLUE
+                    , YELLOW
+                    , MAGENTA
+                    , CYAN
+                    , WHITE
+                     )(depth % 6)
+    // @formatter:on
 
     s"$colour$s$RESET"
   }

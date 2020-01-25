@@ -1,19 +1,22 @@
 package yalcr.repl
 
 import yalcr.lang.Expression
+import yalcr.parsing.CommandParser
 import yalcr.repl.Commands.Command
 
 import scala.util.{Failure, Success, Try}
+
+// TODO In[n] and Out[n] for the REPL, reference previous results, indicate what operation led to the result
 
 trait Repl {
   import yalcr.repl.Repl._
 
   val evaluationStrategy: eval.Strategy[State, (Command, String)]
 
-  def print[A](state: State)
+  def print(state: State)
 
   @scala.annotation.tailrec
-  final def loop[A, B](input: LazyList[String], init: State): Result = {
+  final def loop(input: LazyList[String], init: State): Result = {
     val (lastExpr, history, _) = init
     Try(input.headOption) match {
       case Failure(_) | Success(Some(null)) => Left(AbortReasons.Terminated)

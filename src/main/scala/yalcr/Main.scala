@@ -11,7 +11,7 @@ object Main extends App {
   val repl = new Repl {
     override val evaluationStrategy: Strategy[State, (Command, String)] = ReducingStrategy
 
-    override def print[A](state: State): Unit = state._3 match {
+    override def print(state: State): Unit = state._3 match {
       case Left(err) => println(s"${Console.RED}error: $err${Console.RESET}")
       case Right(str) => println(str)
     }
