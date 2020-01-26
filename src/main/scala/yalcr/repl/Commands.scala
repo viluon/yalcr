@@ -6,12 +6,12 @@ object Commands {
     case Some(command) =>
       command match {
         case "next" =>
-          s"""Continue evaluation of a previously entered expression.
+          """Continue evaluation of a previously entered expression.
              |This command is equivalent to just pressing return (enter)
              |after an expression has been entered.
              |""".stripMargin
         case "contract" =>
-          s"""Attempt to contract an expression.
+          """Attempt to contract an expression.
              |Contraction is the inverse of macro expansion. The result of this
              |command is the transitive closure of contraction.
              |
@@ -24,19 +24,19 @@ object Commands {
             |the second argument is what to replace it with.
             |""".stripMargin
         case "help" =>
-          s"""Prints yalcr usage.
+          """Print yalcr usage.
              |Try just ':help' (without an argument).
              |""".stripMargin
         case unknown => s"Unknown command: $unknown"
       }
     case None =>
-      s"""Type an expression and press return (enter) to have it reduced.
+      """Type an expression and press return (enter) to have it reduced.
          |
          |Available commands:
-         |  :next                             Continue evaluation
-         |  :contract [expression]            Attempt to reverse macro expansion
-         |  :help [command]                   Show help (or more information about a command)
-         |  :def <expression> = <expression>  Define a custom macro
+         |  :next                              Continue evaluation
+         |  :contract [expression]             Attempt to reverse macro expansion
+         |  :help [command]                    Show help (or more information about a command)
+         |  :def <expression> := <expression>  Define a custom macro
          |""".stripMargin
   }
 

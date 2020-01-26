@@ -58,18 +58,26 @@ object Reductions {
     }
   }
 
+  def packNumber(s: EParam, z: EParam, chain: Expression): Option[ENumber] = chain match {
+    case `z` => Some(ENumber(0))
+    case EApplication(`s`, tail) => packNumber(s, z, tail) map (n => ENumber(n.num + 1))
+    case _ => None
+  }
+
   def contract(expr: Expression, inverseMacros: Map[Expression, List[Expression]]): LazyList[Expression] = {
     contractOnce(expr, inverseMacros) flatMap (expr => expr #:: contract(expr, inverseMacros))
   }
 
   def contractOnce(expr: Expression, inverseMacros: Map[Expression, List[Expression]]): LazyList[Expression] = {
     (LazyList from (inverseMacros get expr).toList.flatten) appendedAll (expr match {
-      case ELambda(params, body) => for (body <- contractOnce(body, inverseMacros)) yield ELambda(params, body)
+      case ELambda(s :: z :: Nil, chain) if packNumber(s, z, chain).nonEmpty => packNumber(s, z, chain).toList
+      case ELambda(params, body) => for (body <- contract(body, inverseMacros)) yield ELambda(params, body)
       case EApplication(λ, argument) =>
         for (
-          λ <- contractOnce(λ, inverseMacros);
-          arg <- contractOnce(argument, inverseMacros)
-        ) yield EApplication(λ, arg)
+          (lambda, i) <- (λ #:: contract(λ, inverseMacros)).zipWithIndex;
+          (arg, j) <- (argument #:: contract(argument, inverseMacros)).zipWithIndex
+          if i + j > 0
+        ) yield EApplication(lambda, arg)
       case _ => Nil
     })
   }

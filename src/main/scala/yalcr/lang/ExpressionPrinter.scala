@@ -2,7 +2,7 @@ package yalcr.lang
 
 import scala.Console._
 
-case class ExpressionPrinter(expr: Expression, scope: Set[Expression], depth: Int = 0) {
+private[lang] case class ExpressionPrinter(expr: Expression, scope: Set[Expression], depth: Int = 0) {
   private def nested(expr: Expression, deeper: Boolean = false, params: List[EParam] = Nil) = {
     ExpressionPrinter(expr, params.foldLeft(scope)((ctx, p) => ctx incl p), if (deeper) depth + 1 else depth)
   }

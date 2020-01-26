@@ -45,24 +45,41 @@ object ReducingStrategy extends eval.Strategy[State, Command] {
 
   private def contract(expr: ?[Expression], lastExpr: ?[Expression], macros: Expression -> Expression, history: List[Expression]): EvalResult = {
     val errorOrResults = expr orElse lastExpr toRight "no computation to continue" map {
-      expr => Reductions.contract(expr, Reductions invertMap macros)
+      expr => Reductions.contract(expr, Reductions invertMap (macros filter {
+        case (EApplication(EParam("out"), _), _) => false
+        case _ => true
+      }))
     }
 
-    val first100 = errorOrResults map (_.take(100).zipWithIndex map {
-      case (expr, i) => s"out ${i + history.size} = " + ExpressionPrinter(expr, macros.keySet).pretty
-    } mkString newline)
+    val errorOrProcessedResults = for (
+      exprs <- errorOrResults
+    ) yield {
+      val first100 = exprs take 100
+      val set = first100.toSet
+      val resultRows = set.toList.sortWith(_.toString < _.toString).zipWithIndex map {
+        case (expr, i) => s"out ${i + history.size} = " + expr.pretty(macros.keySet)
+      } mkString newline
 
-    (errorOrResults.map(_.take(100)).toSeq.flatten.toList, errorOrResults flatMap {
-      case LazyList() => Left("could not contract")
-      case exprs if (exprs lengthCompare 100) > 0 => first100 flatMap {
-        str => Left(s"contraction did not terminate in time, showing first 100 results$newline$str")
-      }
-      case _ => first100
-    })
+      (set, resultRows, exprs)
+    }
+
+    errorOrProcessedResults match {
+      case Left(_) => (Nil, errorOrProcessedResults map (_._2))
+      case Right((set, _, _)) => (set.toList, errorOrProcessedResults flatMap {
+        case (_, resultRows, lazyExprs) =>
+          if (lazyExprs.isEmpty) Left("could not contract")
+          else if ((lazyExprs lengthCompare 100) > 0) Left(
+            s"""contraction did not terminate in time, showing only the first 100 results
+               |(${set.size} after deduplication)
+               |$resultRows""".stripMargin
+          )
+          else Right(resultRows)
+      })
+    }
   }
 
   def show(n: Int, macros: Map[Expression, Expression])(p: (Expression, Option[(Operation, Expression)])): String = p match {
-    case (_, Some((op, expr))) => op.toString + newline + s"out $n = " + ExpressionPrinter(expr, macros.keySet).pretty
+    case (_, Some((op, expr))) => op.toString + newline + s"out $n = " + expr.pretty(macros.keySet)
     case (_, None) => "no reductions possible"
   }
 
