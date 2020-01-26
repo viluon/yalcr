@@ -8,18 +8,18 @@ import yalcr.repl.eval.{ReducingStrategy, Strategy}
 import scala.io.StdIn
 
 object Main extends App {
+  def lazyInput: LazyList[String] = {
+    (StdIn readLine "λ ") #:: lazyInput
+  }
+
   val repl = new Repl {
     override val evaluationStrategy: Strategy[State, (Command, String)] = ReducingStrategy
 
-    override def print(state: State): Unit = state._3 match {
+    override def print(state: State): Unit = state.errorOrOk match {
       case Left(err) => println(s"${Console.RED}error: $err${Console.RESET}")
       case Right(str) => println(str)
     }
   }
 
-  repl.loop(lazyInput, (None, Nil, Right("")))
-
-  def lazyInput: LazyList[String] = {
-    (StdIn readLine "λ ") #:: lazyInput
-  }
+  repl loop lazyInput
 }

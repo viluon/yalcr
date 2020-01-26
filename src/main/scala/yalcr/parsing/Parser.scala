@@ -21,4 +21,6 @@ object Parser extends Parsers with RegexParsers with PackratParsers {
       case (exp, acc) => EApplication(exp, acc)
     }
   }
+
+  def parse(str: String): ParseResult[Expression] = parseAll(expression, str)
 }

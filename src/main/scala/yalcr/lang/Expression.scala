@@ -1,7 +1,7 @@
 package yalcr.lang
 
 sealed trait Expression {
-  val pretty: String = ExpressionPrinter(this).pretty
+  lazy val pretty: String = ExpressionPrinter(this).pretty
 }
 
 case class EParam(name: String) extends Expression

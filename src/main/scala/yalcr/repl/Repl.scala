@@ -3,10 +3,9 @@ package yalcr.repl
 import yalcr.lang.Expression
 import yalcr.parsing.CommandParser
 import yalcr.repl.Commands.Command
+import yalcr.extensions.Strings.newline
 
 import scala.util.{Failure, Success, Try}
-
-// TODO In[n] and Out[n] for the REPL, reference previous results, indicate what operation led to the result
 
 trait Repl {
   import yalcr.repl.Repl._
@@ -16,15 +15,15 @@ trait Repl {
   def print(state: State)
 
   @scala.annotation.tailrec
-  final def loop(input: LazyList[String], init: State): Result = {
-    val (lastExpr, history, _) = init
+  final def loop(input: LazyList[String], init: State = initial): Result = {
+    val State(lastExpr, history, _) = init
     Try(input.headOption) match {
       case Failure(_) | Success(Some(null)) => Left(AbortReasons.Terminated)
       case Success(None) => Left(AbortReasons.ReachedEndOfInput)
       case Success(Some(str)) =>
-        val state = CommandParser parse str.toLowerCase() match {
+        val state = CommandParser parse str match {
           case fail: CommandParser.NoSuccess =>
-            (lastExpr, str :: history, Left(s"$fail${System.lineSeparator()}${Commands.usage}"))
+            State(lastExpr, history, Left(fail + newline + Commands.usage))
           case CommandParser.Success(result, next) =>
             evaluationStrategy.eval(init, (result, next.source.toString.substring(next.offset)))
         }
@@ -42,10 +41,9 @@ object Repl {
   }
 
   type AbortReason = AbortReasons.Value
-
-  type History = List[String]
-  type ErrorOrOk = Either[String, String]
-  type LastExpression = Option[Expression]
-  type State = (LastExpression, History, ErrorOrOk)
   type Result = Either[AbortReason, State]
+
+  case class State(lastExpr: Option[Expression], history: List[Expression], errorOrOk: Either[String, String])
+
+  val initial = State(None, Nil, Right(""))
 }
