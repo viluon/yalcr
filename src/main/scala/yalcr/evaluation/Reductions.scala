@@ -2,7 +2,6 @@ package yalcr.evaluation
 
 import yalcr.evaluation.Operations.Operation
 import yalcr.lang._
-import yalcr.parsing.Parser
 
 object Reductions {
   /** Reduce an expression by beta reduction.
@@ -49,6 +48,30 @@ object Reductions {
     (beta(expr) map ((Operations.betaReduction, _))).orElse(
       beta(expr, macros, expandNumbers = true) map ((Operations.macroExpansion, _))
     )
+  }
+
+  def invertMap[K, V](map: Map[K, V]): Map[V, List[K]] = {
+    map.foldLeft(Map[V, List[K]]()) {
+      case (map, (k, v)) => (map updatedWith v) {
+        maybeKs => Some(k :: maybeKs.toList.flatten)
+      }
+    }
+  }
+
+  def contract(expr: Expression, inverseMacros: Map[Expression, List[Expression]]): LazyList[Expression] = {
+    contractOnce(expr, inverseMacros) flatMap (expr => expr #:: contract(expr, inverseMacros))
+  }
+
+  def contractOnce(expr: Expression, inverseMacros: Map[Expression, List[Expression]]): LazyList[Expression] = {
+    (LazyList from (inverseMacros get expr).toList.flatten) appendedAll (expr match {
+      case ELambda(params, body) => for (body <- contractOnce(body, inverseMacros)) yield ELambda(params, body)
+      case EApplication(λ, argument) =>
+        for (
+          λ <- contractOnce(λ, inverseMacros);
+          arg <- contractOnce(argument, inverseMacros)
+        ) yield EApplication(λ, arg)
+      case _ => Nil
+    })
   }
 
   def substitute(expr: Expression, param: EParam, argument: Expression): Expression = expr match {

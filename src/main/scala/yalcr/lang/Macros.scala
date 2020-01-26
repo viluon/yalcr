@@ -4,7 +4,7 @@ import yalcr.parsing.Parser
 
 object Macros {
   private val parseMacroPair: ((String, String)) => (Expression, Expression) = {
-    case (key, value) => (EParam(key), (Parser parse value).get)
+    case (key, value) => (EParam(key), (Parser parseExpr value).get)
   }
 
   val arithmetic: Map[Expression, Expression] = Map(
