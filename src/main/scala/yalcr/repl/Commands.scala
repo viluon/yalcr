@@ -1,43 +1,43 @@
 package yalcr.repl
 import yalcr.lang.Expression
 
+// TODO add example expressions
 object Commands {
   def usage(cmd: Option[String] = None): String = cmd match {
-    case Some(command) =>
-      command match {
-        case "next" =>
-          """Continue evaluation of a previously entered expression.
-             |This command is equivalent to just pressing return (enter)
-             |after an expression has been entered.
-             |""".stripMargin
-        case "contract" =>
-          """Attempt to contract an expression.
-             |Contraction is the inverse of macro expansion. The result of this
-             |command is the transitive closure of contraction.
-             |
-             |:contract can either be applied to an argument (the expression to contract)
-             |or to the last used expression (when no argument is given).
-             |""".stripMargin
-        case "def" =>
-          """Define a custom macro.
-            |The first argument is the expression to replace (typically a name for the macro),
-            |the second argument is what to replace it with.
-            |""".stripMargin
-        case "help" =>
-          """Print yalcr usage.
-             |Try just ':help' (without an argument).
-             |""".stripMargin
-        case unknown => s"Unknown command: $unknown"
-      }
+    case Some(command) => command match {
+      case "next" =>
+        """Continue evaluation of a previously entered expression.
+          |This command is equivalent to just pressing return (enter)
+          |after an expression has been entered.
+          |""".stripMargin
+      case "contract" =>
+        """Attempt to contract an expression.
+          |Contraction is the inverse of macro expansion. The result of this
+          |command is the transitive closure of contraction.
+          |
+          |:contract can either be applied to an argument (the expression to contract)
+          |or to the last used expression (when no argument is given).
+          |""".stripMargin
+      case "def" =>
+        """Define a custom macro.
+          |The first argument is the expression to replace (typically a name for the macro),
+          |the second argument is what to replace it with.
+          |""".stripMargin
+      case "help" =>
+        """Print yalcr usage.
+          |Try just ':help' (without an argument).
+          |""".stripMargin
+      case unknown => s"Unknown command: $unknown"
+    }
     case None =>
       """Type an expression and press return (enter) to have it reduced.
-         |
-         |Available commands:
-         |  :next                              Continue evaluation
-         |  :contract [expression]             Attempt to reverse macro expansion
-         |  :help [command]                    Show help (or more information about a command)
-         |  :def <expression> := <expression>  Define a custom macro
-         |""".stripMargin
+        |
+        |Available commands:
+        |  :next                              Continue evaluation
+        |  :contract [expression]             Attempt to reverse macro expansion
+        |  :help [command]                    Show help (or more information about a command)
+        |  :def <expression> := <expression>  Define a custom macro
+        |""".stripMargin
   }
 
   sealed trait Command

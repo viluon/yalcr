@@ -21,33 +21,27 @@ object Reductions {
    * @param scope The current scope for parameter lookups.
    * @return The result of beta reduction, or [[None]] if no reductions are possible.
    */
-  def beta(expr: Expression, scope: Map[Expression, Expression] = Map.empty, expandNumbers: Boolean = false): Option[Expression] = expr match {
-    case _ if scope contains expr => scope get expr
-    case ELambda(params, body) => for (body <- beta(body, scope removedAll params, expandNumbers)) yield ELambda(params, body)
+  def beta(expr: Expression, scope: Map[Expression, Expression] = Map.empty, expandNumbers: Boolean = false): Option[(Operation, Expression)] = expr match {
+    case _ if scope contains expr => scope get expr map ((Operations.macroExpansion, _))
+    case EApplication(ELambda(param :: ps, body), argument) =>
+      val expr = substitute(body, param, argument)
+      Some(Operations.betaReduction, if (ps.nonEmpty) ELambda(ps, expr) else expr)
+    case ELambda(params, body) => for ((op, body) <- beta(body, scope removedAll params, expandNumbers)) yield (op, ELambda(params, body))
     case EApplication(lambda, argument) =>
-      val λDefaultAndReduced = lambda :: beta(lambda, scope, expandNumbers).toList
-      val argDefaultAndReduced = argument :: beta(argument, scope, expandNumbers).toList
+      val λDefaultAndReduced = (Operations.identity, lambda) :: beta(lambda, scope, expandNumbers).toList
+      val argDefaultAndReduced = (Operations.identity, argument) :: beta(argument, scope, expandNumbers).toList
 
       (for (
-        λ <- λDefaultAndReduced.reverse;
-        arg <- argDefaultAndReduced.reverse
+        (op1, λ) <- λDefaultAndReduced.reverse;
+        (op2, arg) <- argDefaultAndReduced.reverse
         if (λ == lambda) != (arg == argument)
-      ) yield EApplication(λ, arg)).headOption orElse {
-        lambda match {
-          case ELambda(param :: ps, body) =>
-            val expr = substitute(body, param, argument)
-            Some(if (ps.nonEmpty) ELambda(ps, expr) else expr)
-          case _ => None
-        }
-      }
-    case n@ENumber(num) if expandNumbers && num >= 0 => Some(n.toLambda)
+      ) yield (List(op1, op2).find(_ != Operations.identity).get, EApplication(λ, arg))).headOption
+    case n@ENumber(num) if expandNumbers && num >= 0 => Some(Operations.macroExpansion, n.toLambda)
     case _ => None
   }
 
   def reduceAndExpand(expr: Expression, macros: Map[Expression, Expression] = Macros.all): Option[(Operation, Expression)] = {
-    (beta(expr) map ((Operations.betaReduction, _))).orElse(
-      beta(expr, macros, expandNumbers = true) map ((Operations.macroExpansion, _))
-    )
+    beta(expr, macros, expandNumbers = true)
   }
 
   def invertMap[K, V](map: Map[K, V]): Map[V, List[K]] = {

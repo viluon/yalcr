@@ -22,7 +22,7 @@ object Main extends App {
   }
 
   println(
-    """Welcome to yalcr!
+    """Welcome to yaλcr!
       |Type :help for help.
       |""".stripMargin
   )

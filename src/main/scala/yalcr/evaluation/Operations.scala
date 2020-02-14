@@ -5,4 +5,5 @@ object Operations extends Enumeration {
 
   val betaReduction: Operation = Value("β reduction")
   val macroExpansion: Operation = Value("macro expansion")
+  val identity: Operation = Value("identity")
 }

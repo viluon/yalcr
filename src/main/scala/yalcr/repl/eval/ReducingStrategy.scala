@@ -66,14 +66,12 @@ object ReducingStrategy extends eval.Strategy[State, Command] {
     errorOrProcessedResults match {
       case Left(_) => (Nil, errorOrProcessedResults map (_._2))
       case Right((set, _, _)) => (set.toList, errorOrProcessedResults flatMap {
-        case (_, resultRows, lazyExprs) =>
-          if (lazyExprs.isEmpty) Left("could not contract")
-          else if ((lazyExprs lengthCompare 100) > 0) Left(
-            s"""contraction did not terminate in time, showing only the first 100 results
-               |(${set.size} after deduplication)
-               |$resultRows""".stripMargin
-          )
-          else Right(resultRows)
+        case (_, _, LazyList()) => Left("could not contract")
+        case (_, resultRows, lazyExprs) if (lazyExprs lengthCompare 100) > 0 => Left(
+          s"""contraction did not terminate in time, showing only the first 100 results
+             |(${set.size} after deduplication)
+             |$resultRows""".stripMargin)
+        case (_, resultRows, _) => Right(resultRows)
       })
     }
   }

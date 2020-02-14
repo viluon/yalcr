@@ -18,8 +18,8 @@ trait Repl {
   final def loop(input: LazyList[String], init: State = initial): Result = {
     val State(lastExpr, history, _, macros) = init
     Try(input.headOption) match {
-      case Failure(_) | Success(Some(null)) => Left(AbortReasons.Terminated)
-      case Success(None) => Left(AbortReasons.ReachedEndOfInput)
+      case Failure(_) | Success(Some(null)) => (init, AbortReasons.Terminated)
+      case Success(None) => (init, AbortReasons.ReachedEndOfInput)
       case Success(Some(ws)) if "^\\s*$".r matches ws => loop(input.tail, lastExpr match {
         case None => init
         case _ => val s = evaluationStrategy.eval(init, Commands.Next)
@@ -47,7 +47,7 @@ object Repl {
   }
 
   type AbortReason = AbortReasons.Value
-  type Result = Either[AbortReason, State]
+  type Result = (State, AbortReason)
 
   case class State(lastExpr: Option[Expression], history: List[Expression], errorOrOk: Either[String, String], macros: Map[Expression, Expression])
 
