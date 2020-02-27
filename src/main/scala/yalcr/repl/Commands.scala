@@ -35,7 +35,8 @@ object Commands {
         |Available commands:
         |  :next                              Continue evaluation
         |  :contract [expression]             Attempt to reverse macro expansion
-        |  :help [command]                    Show help (or more information about a command)
+        |  :help [topic]                      Show help about a topic,
+        |                                     or general help if no topic is given
         |  :def <expression> := <expression>  Define a custom macro
         |""".stripMargin
   }
